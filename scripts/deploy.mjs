@@ -12,14 +12,11 @@ try {
   // Switch to gh-pages
   execSync('git checkout gh-pages', { stdio: 'inherit' })
 
-  // Clean everything except .git
-  const files = execSync('git ls-files').toString().trim().split('\n').filter(Boolean)
-  if (files.length) {
-    execSync('git rm -rf --cached .', { stdio: 'ignore' })
-    for (const f of files) {
-      try { rmSync(f, { recursive: true, force: true }) } catch {}
-    }
-  }
+  // Clean everything tracked and untracked (incl. node_modules) except .git
+  execSync('git rm -rf --cached . 2>/dev/null || true', { shell: '/bin/bash' })
+  execSync('git clean -fdx -e .git', { stdio: 'inherit' })
+  // Remove any leftover tracked files
+  execSync('git ls-files -z | xargs -0 rm -f 2>/dev/null || true', { shell: '/bin/bash' })
 
   // Copy built files
   cpSync(tmp, '.', { recursive: true })
