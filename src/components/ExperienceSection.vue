@@ -6,7 +6,7 @@
         <span class="entry-title">杭州不鸣科技有限公司</span>
         <span class="entry-date">2021.12 — 至今</span>
       </div>
-      <div class="entry-sub">资产管线负责人</div>
+      <div class="entry-sub">3D 软件架构 / AI 资产生成 / 场景生成 · 资产管线负责人</div>
     </div>
     <div class="entry">
       <div class="entry-header">

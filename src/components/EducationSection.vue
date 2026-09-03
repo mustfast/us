@@ -1,5 +1,5 @@
 <template>
-  <section class="section">
+  <section class="section edu">
     <h2>教育经历</h2>
     <div class="entry">
       <div class="entry-header">

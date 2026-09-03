@@ -7,7 +7,7 @@
     </div>
     <div class="contact">
       <div>📞 15068774027</div>
-      <div>📧 <a href="mailto:758185271@qq.com">758185271@qq.com</a></div>
+      <div>📧 <a href="mailto:myliuliming@outlook.com">myliuliming@outlook.com</a></div>
     </div>
   </header>
 </template>
