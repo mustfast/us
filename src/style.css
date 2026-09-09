@@ -125,6 +125,32 @@ body {
 }
 .duty-list li { margin-bottom: 2px; }
 .duty-list li::marker { color: #0f3460; }
+.num-list { list-style: decimal; padding-left: 22px; }
+.num-list li::marker { color: #0f3460; font-weight: 600; }
+
+/* ----- 荣誉/证书行 ----- */
+.award-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  padding: 2px 0 2px 18px;
+  position: relative;
+  font-size: 14px;
+  color: #333;
+}
+.award-row::before {
+  content: "▸";
+  position: absolute;
+  left: 0;
+  color: #0f3460;
+  font-size: 12px;
+}
+.award-date {
+  color: #888;
+  font-size: 13px;
+  white-space: nowrap;
+}
 
 /* ----- 响应式 ----- */
 @media (max-width: 640px) {
@@ -209,4 +235,8 @@ body {
 
   .duty-list { font-size: 11px; padding-left: 15px; }
   .duty-list li { margin-bottom: 1px; }
+
+  .award-row { font-size: 12px; padding: 1px 0 1px 14px; }
+  .award-date { font-size: 11px; }
+  .num-list { padding-left: 18px; }
 }

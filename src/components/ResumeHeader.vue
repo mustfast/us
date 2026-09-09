@@ -1,13 +1,18 @@
 <template>
   <header class="resume-header">
     <div>
-      <h1>柳黎明</h1>
-      <div class="subtitle">杭州不鸣科技有限公司 · 资产管线负责人</div>
-      <div class="subtitle">出生：1988/10</div>
+      <h1>{{ header.name }}</h1>
+      <div v-for="(s, i) in header.subtitle" :key="i" class="subtitle">{{ s }}</div>
     </div>
     <div class="contact">
-      <div>📞 15068774027</div>
-      <div>📧 <a href="mailto:myliuliming@outlook.com">myliuliming@outlook.com</a></div>
+      <div v-if="header.phone">📞 {{ header.phone }}</div>
+      <div v-if="header.email">📧 <a :href="'mailto:' + header.email">{{ header.email }}</a></div>
     </div>
   </header>
 </template>
+
+<script setup>
+defineProps({
+  header: { type: Object, required: true }
+})
+</script>

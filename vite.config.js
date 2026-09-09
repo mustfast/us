@@ -1,3 +1,4 @@
+import { fileURLToPath, URL } from 'node:url'
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 
@@ -5,6 +6,12 @@ export default defineConfig({
   base: '/us/',
   plugins: [vue()],
   build: {
-    outDir: 'dist'
+    outDir: 'docs',
+    rollupOptions: {
+      input: {
+        main: fileURLToPath(new URL('./index.html', import.meta.url)),
+        gu: fileURLToPath(new URL('./gu/index.html', import.meta.url))
+      }
+    }
   }
 })
