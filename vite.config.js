@@ -10,7 +10,9 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: fileURLToPath(new URL('./index.html', import.meta.url)),
-        gu: fileURLToPath(new URL('./gu/index.html', import.meta.url))
+        gu: fileURLToPath(new URL('./gu/index.html', import.meta.url)),
+        liuliming: fileURLToPath(new URL('./us/liuliming/index.html', import.meta.url)),
+        guyiming: fileURLToPath(new URL('./us/guyiming/index.html', import.meta.url))
       }
     }
   }

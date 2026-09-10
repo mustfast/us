@@ -7,7 +7,7 @@ const tmp = mkdtempSync(join(tmpdir(), 'deploy-'))
 
 try {
   // Copy built files to temp
-  cpSync('dist', tmp, { recursive: true })
+  cpSync('docs', tmp, { recursive: true })
 
   // Switch to gh-pages
   execSync('git checkout gh-pages', { stdio: 'inherit' })
