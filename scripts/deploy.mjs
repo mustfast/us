@@ -1,5 +1,5 @@
 import { execSync } from 'child_process'
-import { cpSync, rmSync, mkdtempSync } from 'fs'
+import { cpSync, readdirSync, rmSync, mkdtempSync } from 'fs'
 import { join } from 'path'
 import { tmpdir } from 'os'
 
@@ -8,6 +8,9 @@ const tmp = mkdtempSync(join(tmpdir(), 'deploy-'))
 try {
   // Copy built files to temp
   cpSync('docs', tmp, { recursive: true })
+  for (const file of readdirSync('.')) {
+    if (file.toLowerCase().endsWith('.pdf')) cpSync(file, join(tmp, file))
+  }
 
   // Switch to gh-pages
   execSync('git checkout gh-pages', { stdio: 'inherit' })
