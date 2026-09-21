@@ -1,0 +1,102 @@
+{
+  "generatedAt": "2026-09-21T14:56:13.391Z",
+  "count": 8,
+  "files": [
+    {
+      "path": "简历/代裴飞简历.pdf",
+      "title": "代裴飞简历",
+      "category": "简历",
+      "folder": "简历",
+      "ext": "pdf",
+      "previewable": true,
+      "textual": false,
+      "size": 737303,
+      "mtime": "2026-09-21T13:58:54.858Z",
+      "desc": ""
+    },
+    {
+      "path": "简历/谷一鸣-简历.pdf",
+      "title": "谷一鸣-简历",
+      "category": "简历",
+      "folder": "简历",
+      "ext": "pdf",
+      "previewable": true,
+      "textual": false,
+      "size": 629038,
+      "mtime": "2026-09-21T13:58:54.861Z",
+      "desc": ""
+    },
+    {
+      "path": "简历/柳黎明.pdf",
+      "title": "柳黎明",
+      "category": "简历",
+      "folder": "简历",
+      "ext": "pdf",
+      "previewable": true,
+      "textual": false,
+      "size": 546253,
+      "mtime": "2026-08-02T02:15:39.890Z",
+      "desc": ""
+    },
+    {
+      "path": "简历/柳黎明简历.pdf",
+      "title": "柳黎明简历",
+      "category": "简历",
+      "folder": "简历",
+      "ext": "pdf",
+      "previewable": true,
+      "textual": false,
+      "size": 277632,
+      "mtime": "2026-09-21T13:58:54.860Z",
+      "desc": ""
+    },
+    {
+      "path": "AI/notes/数据基建-闭环仿真与数据飞轮.md",
+      "title": "数据基建-闭环仿真与数据飞轮",
+      "category": "AI",
+      "folder": "AI/notes",
+      "ext": "md",
+      "previewable": true,
+      "textual": true,
+      "size": 20620,
+      "mtime": "2026-09-21T14:16:12.034Z",
+      "desc": ""
+    },
+    {
+      "path": "AI/notes/数据基建理解.md",
+      "title": "数据基建理解",
+      "category": "AI",
+      "folder": "AI/notes",
+      "ext": "md",
+      "previewable": true,
+      "textual": true,
+      "size": 13120,
+      "mtime": "2026-09-21T14:16:12.032Z",
+      "desc": ""
+    },
+    {
+      "path": "AI/paper/pi0.pdf",
+      "title": "pi0",
+      "category": "AI",
+      "folder": "AI/paper",
+      "ext": "pdf",
+      "previewable": true,
+      "textual": false,
+      "size": 7873003,
+      "mtime": "2026-08-09T14:15:34.935Z",
+      "desc": ""
+    },
+    {
+      "path": "AI/project/data_format/前处理数据格式转换技术要求规格书.pdf",
+      "title": "前处理数据格式转换技术要求规格书",
+      "category": "AI",
+      "folder": "AI/project/data_format",
+      "ext": "pdf",
+      "previewable": true,
+      "textual": false,
+      "size": 481267,
+      "mtime": "2026-09-21T14:12:04.503Z",
+      "desc": ""
+    }
+  ]
+}
