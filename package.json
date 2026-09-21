@@ -4,10 +4,11 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
+    "gen:docs": "node scripts/gen-docs.mjs",
+    "dev": "npm run gen:docs && vite",
+    "build": "npm run gen:docs && vite build",
     "preview": "vite preview",
-    "deploy": "vite build && node scripts/deploy.mjs"
+    "deploy": "npm run build && node scripts/deploy.mjs"
   },
   "dependencies": {
     "vue": "^3.5.13"

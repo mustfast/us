@@ -4,4 +4,10 @@ dist
 .DS_Store
 *.local
 *.pdf
+# 文档库目录里的文件要纳入版本管理（覆盖上面的 *.pdf）
+!public/files/**/*.pdf
+# Windows 快捷方式不是真文件，一律不要提交
+*.lnk
 docs
+# 由 npm run gen:docs 自动生成
+public/docs.json
