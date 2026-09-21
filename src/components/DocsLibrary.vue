@@ -5,7 +5,7 @@
         <h1>文档库</h1>
         <p class="lib-sub">
           <template v-if="!loading && !error">
-            共 {{ docs.length }} 份文档<template v-if="categories.length > 1"> · {{ categories.length }} 个分类</template>
+            共 {{ docs.length }} 份文档<template v-if="folderCount"> · {{ folderCount }} 个目录</template>
             <template v-if="generatedAt"> · 更新于 {{ dateText(generatedAt) }}</template>
           </template>
           <template v-else>个人资料集中存放，随时在线查看</template>
@@ -16,9 +16,12 @@
           v-model="keyword"
           class="search"
           type="search"
-          placeholder="搜索文档名 / 分类"
+          placeholder="搜索文档名 / 目录"
           aria-label="搜索文档"
         />
+        <button class="btn-ghost btn-tree" :class="{ 'is-on': treeOpen }" @click="treeOpen = !treeOpen">
+          {{ treeOpen ? '收起目录' : '目录' }}
+        </button>
         <button class="btn-ghost" :disabled="loading" @click="load">
           {{ loading ? '加载中…' : '刷新' }}
         </button>
@@ -42,48 +45,89 @@
       </p>
     </div>
 
-    <template v-else>
-      <nav class="cats">
-        <button
-          v-for="c in categoryTabs"
-          :key="c.value"
-          class="cat"
-          :class="{ active: c.value === activeCat }"
-          @click="activeCat = c.value"
-        >
-          {{ c.label }}<span class="cat-count">{{ c.count }}</span>
-        </button>
-      </nav>
-
-      <div v-if="!filtered.length" class="state">没有匹配「{{ keyword }}」的文档</div>
-
-      <section v-for="group in grouped" :key="group.name" class="group">
-        <h2 class="group-title">{{ group.name }}</h2>
-        <ul class="doc-list">
-          <li
-            v-for="doc in group.items"
-            :key="doc.path"
-            class="doc"
-            tabindex="0"
-            role="button"
-            @click="open(doc)"
-            @keydown.enter.prevent="open(doc)"
-            @keydown.space.prevent="open(doc)"
-          >
-            <span class="doc-icon" aria-hidden="true">{{ iconOf(doc) }}</span>
-            <span class="doc-main">
-              <span class="doc-title">{{ doc.title }}</span>
-              <span class="doc-meta">
-                <span v-if="doc.folder && doc.folder !== doc.category" class="doc-folder">{{ doc.folder }}</span>
-                {{ doc.ext.toUpperCase() }} · {{ sizeText(doc.size) }} · {{ dateText(doc.mtime) }}
-              </span>
-              <span v-if="doc.desc" class="doc-desc">{{ doc.desc }}</span>
-            </span>
-            <span class="doc-action">{{ doc.previewable ? '预览' : '下载' }}</span>
+    <div v-else class="lib-body">
+      <aside class="tree" :class="{ open: treeOpen }">
+        <div class="tree-inner">
+          <div class="tree-head">
+            <span class="tree-title">目录</span>
+            <button class="tree-mini" @click="toggleAll">
+              {{ allExpanded ? '全部折叠' : '全部展开' }}
+            </button>
+          </div>
+          <ul class="tree-list">
+          <li>
+            <button
+              class="tree-node"
+              :class="{ active: selectedFolder === '' }"
+              @click="selectFolder('')"
+            >
+              <span class="tree-caret is-leaf"></span>
+              <span class="tree-icon">🗂️</span>
+              <span class="tree-name">全部文档</span>
+              <span class="tree-count">{{ docs.length }}</span>
+            </button>
           </li>
-        </ul>
-      </section>
-    </template>
+          <li v-for="row in flatTree" :key="row.node.path">
+            <button
+              class="tree-node"
+              :class="{ active: selectedFolder === row.node.path }"
+              :style="{ paddingLeft: 10 + row.depth * 15 + 'px' }"
+              @click="selectFolder(row.node.path)"
+            >
+              <span
+                class="tree-caret"
+                :class="{ 'is-leaf': !row.node.children.length }"
+                @click.stop="toggleExpand(row.node.path)"
+              >{{ row.node.children.length ? (expanded.has(row.node.path) ? '▾' : '▸') : '' }}</span>
+              <span class="tree-icon">{{ row.node.children.length && expanded.has(row.node.path) ? '📂' : '📁' }}</span>
+              <span class="tree-name">{{ row.node.name }}</span>
+              <span class="tree-count">{{ row.node.count }}</span>
+            </button>
+          </li>
+          </ul>
+        </div>
+      </aside>
+
+      <main class="list-pane">
+        <div class="list-bar">
+          <span class="list-scope">
+            <span class="list-scope-name">{{ selectedFolder || '全部文档' }}</span>
+            <span class="list-scope-count">{{ filtered.length }} 份</span>
+          </span>
+          <button v-if="keyword || selectedFolder" class="list-clear" @click="clearFilters">清除筛选</button>
+        </div>
+
+        <div v-if="!filtered.length" class="state">
+          没有匹配{{ keyword ? `「${keyword}」` : '' }}的文档
+        </div>
+
+        <section v-for="group in grouped" :key="group.name" class="group">
+          <h2 class="group-title">{{ group.name }}</h2>
+          <ul class="doc-list">
+            <li
+              v-for="doc in group.items"
+              :key="doc.path"
+              class="doc"
+              tabindex="0"
+              role="button"
+              @click="open(doc)"
+              @keydown.enter.prevent="open(doc)"
+              @keydown.space.prevent="open(doc)"
+            >
+              <span class="doc-icon" aria-hidden="true">{{ iconOf(doc) }}</span>
+              <span class="doc-main">
+                <span class="doc-title">{{ doc.title }}</span>
+                <span class="doc-meta">
+                  {{ doc.ext.toUpperCase() }} · {{ sizeText(doc.size) }} · {{ dateText(doc.mtime) }}
+                </span>
+                <span v-if="doc.desc" class="doc-desc">{{ doc.desc }}</span>
+              </span>
+              <span class="doc-action">{{ doc.previewable ? '预览' : '下载' }}</span>
+            </li>
+          </ul>
+        </section>
+      </main>
+    </div>
 
     <div v-if="current" class="viewer" @click.self="close">
       <div class="viewer-box">
@@ -124,8 +168,11 @@ const generatedAt = ref('')
 const loading = ref(true)
 const error = ref('')
 const keyword = ref('')
-const activeCat = ref('__all__')
 const current = ref(null)
+/* 目录树状态：selectedFolder 为空串表示「全部文档」 */
+const selectedFolder = ref('')
+const expanded = ref(new Set())
+const treeOpen = ref(false)
 /* 文本类文档（Markdown）的渲染结果 */
 const docHtml = ref('')
 const docLoading = ref(false)
@@ -156,8 +203,10 @@ async function load() {
 
 const filtered = computed(() => {
   const kw = keyword.value.trim().toLowerCase()
+  const scope = selectedFolder.value
   return docs.value.filter((doc) => {
-    if (activeCat.value !== '__all__' && doc.category !== activeCat.value) return false
+    // 选中目录时包含其所有子目录
+    if (scope && doc.folder !== scope && !doc.folder.startsWith(`${scope}/`)) return false
     if (!kw) return true
     return (
       doc.title.toLowerCase().includes(kw) ||
@@ -168,25 +217,130 @@ const filtered = computed(() => {
   })
 })
 
-const categories = computed(() => [...new Set(docs.value.map((d) => d.category))])
-
-const categoryTabs = computed(() => [
-  { value: '__all__', label: '全部', count: docs.value.length },
-  ...categories.value.map((name) => ({
-    value: name,
-    label: name,
-    count: docs.value.filter((d) => d.category === name).length
-  }))
-])
-
+/* 按完整目录分组展示，未放进子目录的文档归入「未分类」 */
 const grouped = computed(() => {
   const groups = new Map()
   for (const doc of filtered.value) {
-    if (!groups.has(doc.category)) groups.set(doc.category, [])
-    groups.get(doc.category).push(doc)
+    const key = doc.folder || '未分类'
+    if (!groups.has(key)) groups.set(key, [])
+    groups.get(key).push(doc)
   }
   return [...groups.entries()].map(([name, items]) => ({ name, items }))
 })
+
+/* ----- 目录树 ----- */
+
+/**
+ * 由文档路径构建目录树。
+ * count  = 该目录（含所有子目录）下的文档数
+ * direct = 直接放在该目录下的文档数
+ */
+const treeRoot = computed(() => {
+  const root = { name: '全部文档', path: '', count: docs.value.length, direct: 0, children: [] }
+  const index = new Map([['', root]])
+
+  for (const doc of docs.value) {
+    if (!doc.folder) {
+      root.direct++
+      continue
+    }
+    let parent = root
+    let acc = ''
+    for (const seg of doc.folder.split('/')) {
+      acc = acc ? `${acc}/${seg}` : seg
+      let node = index.get(acc)
+      if (!node) {
+        node = { name: seg, path: acc, count: 0, direct: 0, children: [] }
+        index.set(acc, node)
+        parent.children.push(node)
+      }
+      node.count++
+      parent = node
+    }
+    parent.direct++
+  }
+  return root
+})
+
+function countFolders(node) {
+  return node.children.reduce((sum, child) => sum + 1 + countFolders(child), 0)
+}
+
+const folderCount = computed(() => countFolders(treeRoot.value))
+
+/** 按当前展开状态把树拍平成可直接 v-for 的列表（避免递归组件） */
+const flatTree = computed(() => {
+  const out = []
+  const walk = (node, depth) => {
+    for (const child of node.children) {
+      out.push({ node: child, depth })
+      if (expanded.value.has(child.path)) walk(child, depth + 1)
+    }
+  }
+  walk(treeRoot.value, 0)
+  return out
+})
+
+/** 有子目录的目录，用于「全部展开 / 全部折叠」 */
+const expandablePaths = computed(() => {
+  const out = []
+  const walk = (node) => {
+    for (const child of node.children) {
+      if (child.children.length) out.push(child.path)
+      walk(child)
+    }
+  }
+  walk(treeRoot.value)
+  return out
+})
+
+const allExpanded = computed(
+  () => expandablePaths.value.length > 0 && expandablePaths.value.every((p) => expanded.value.has(p))
+)
+
+let treeInitialized = false
+watch(treeRoot, (root) => {
+  if (treeInitialized || !docs.value.length) return
+  const next = new Set()
+  const walk = (node) => {
+    for (const child of node.children) {
+      next.add(child.path)
+      walk(child)
+    }
+  }
+  walk(root)
+  expanded.value = next
+  treeInitialized = true
+})
+
+function toggleExpand(path) {
+  const next = new Set(expanded.value)
+  if (next.has(path)) next.delete(path)
+  else next.add(path)
+  expanded.value = next
+}
+
+function toggleAll() {
+  expanded.value = allExpanded.value ? new Set() : new Set(expandablePaths.value)
+}
+
+function selectFolder(path) {
+  selectedFolder.value = path
+  // 展开自身与所有祖先，保证选中项在树里可见
+  const next = new Set(expanded.value)
+  let acc = ''
+  for (const seg of path ? path.split('/') : []) {
+    acc = acc ? `${acc}/${seg}` : seg
+    next.add(acc)
+  }
+  expanded.value = next
+  treeOpen.value = false
+}
+
+function clearFilters() {
+  keyword.value = ''
+  selectedFolder.value = ''
+}
 
 function encodeRelPath(rel) {
   return rel.split('/').map(encodeURIComponent).join('/')
@@ -293,8 +447,10 @@ onBeforeUnmount(() => {
   background: #fff;
   box-shadow: 0 2px 20px rgba(0, 0, 0, .08);
   border-radius: 4px;
-  overflow: hidden;
   padding-bottom: 8px;
+  /* 注意：这里不能设 overflow: hidden。
+     任何 overflow 非 visible 的祖先都会成为滚动容器，导致目录树的 position: sticky 失效。
+     圆角改由 .lib-head 自己处理。 */
 }
 
 /* ----- 头部 ----- */
@@ -307,6 +463,7 @@ onBeforeUnmount(() => {
   align-items: center;
   flex-wrap: wrap;
   gap: 16px;
+  border-radius: 4px 4px 0 0;
 }
 .lib-head h1 { font-size: 26px; font-weight: 700; letter-spacing: 2px; }
 .lib-sub { font-size: 13px; opacity: .8; margin-top: 4px; }
@@ -342,6 +499,10 @@ onBeforeUnmount(() => {
 .btn-ghost:hover:not(:disabled) { background: rgba(168, 216, 255, .15); }
 .btn-ghost:disabled { opacity: .5; cursor: default; }
 
+/* 「目录」按钮只在窄屏出现；宽屏目录树常驻 */
+.btn-tree { display: none; }
+.btn-tree.is-on { background: rgba(168, 216, 255, .2); }
+
 /* ----- 状态提示 ----- */
 .state { padding: 40px; text-align: center; color: #888; font-size: 14px; }
 .state-error { color: #c0392b; }
@@ -354,30 +515,108 @@ onBeforeUnmount(() => {
   color: #0f3460;
 }
 
-/* ----- 分类标签 ----- */
-.cats {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  padding: 18px 40px 4px;
+/* ----- 主体两栏：目录树 + 文档列表 ----- */
+.lib-body { display: flex; align-items: flex-start; }
+
+.tree {
+  flex: 0 0 218px;
+  width: 218px;
+  border-right: 1px solid #eef1f5;
+  align-self: stretch;
 }
-.cat {
-  display: inline-flex;
+/* 内层做粘性定位，外层保持拉伸以便左侧分隔线贯穿整个列表高度 */
+.tree-inner {
+  position: sticky;
+  top: 0;
+  max-height: 100vh;
+  overflow-y: auto;
+  padding: 16px 0 20px;
+}
+.tree-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px 10px;
+}
+.tree-title {
+  font-size: 12.5px;
+  color: #9aa5b4;
+  letter-spacing: 2px;
+}
+.tree-mini {
+  font-size: 12px;
+  font-family: inherit;
+  color: #7b8aa0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+.tree-mini:hover { color: #0f3460; text-decoration: underline; }
+
+.tree-list { list-style: none; }
+.tree-node {
+  display: flex;
   align-items: center;
   gap: 6px;
-  padding: 5px 14px;
-  font-size: 13px;
+  width: 100%;
+  padding: 6px 16px 6px 10px;
+  font-size: 13.5px;
   font-family: inherit;
-  color: #1a3a6b;
-  background: #e8f0fe;
+  color: #3c4a5c;
+  background: none;
   border: none;
-  border-radius: 20px;
+  text-align: left;
   cursor: pointer;
-  transition: background .2s, color .2s;
+  transition: background .15s, color .15s;
 }
-.cat:hover { background: #d6e4fb; }
-.cat.active { background: #0f3460; color: #fff; }
-.cat-count { font-size: 11.5px; opacity: .7; }
+.tree-node:hover { background: #f5f8fd; }
+.tree-node.active { background: #e8f0fe; color: #0f3460; font-weight: 600; }
+.tree-caret {
+  flex: 0 0 13px;
+  width: 13px;
+  font-size: 10px;
+  color: #98a4b5;
+  text-align: center;
+  line-height: 1;
+  cursor: pointer;
+}
+.tree-caret.is-leaf { cursor: default; }
+.tree-icon { font-size: 13px; line-height: 1; }
+.tree-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tree-count {
+  flex-shrink: 0;
+  font-size: 11.5px;
+  color: #a7b1bf;
+}
+.tree-node.active .tree-count { color: #5b7290; }
+
+.list-pane { flex: 1; min-width: 0; padding-bottom: 8px; }
+.list-bar {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 40px 0;
+}
+.list-scope-name { font-size: 15px; font-weight: 600; color: #1a1a2e; }
+.list-scope-count { font-size: 12.5px; color: #9aa5b4; margin-left: 8px; }
+.list-clear {
+  font-size: 12.5px;
+  font-family: inherit;
+  color: #7b8aa0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  white-space: nowrap;
+}
+.list-clear:hover { color: #0f3460; text-decoration: underline; }
 
 /* ----- 分组与列表 ----- */
 .group { padding: 16px 40px 4px; }
@@ -414,15 +653,6 @@ onBeforeUnmount(() => {
   white-space: nowrap;
 }
 .doc-meta { font-size: 12.5px; color: #999; margin-top: 2px; }
-.doc-folder {
-  display: inline-block;
-  background: #f0f4fa;
-  color: #5b7290;
-  border-radius: 3px;
-  padding: 0 6px;
-  margin-right: 6px;
-  font-size: 11.5px;
-}
 .doc-desc { font-size: 13px; color: #666; margin-top: 2px; }
 .doc-action {
   font-size: 13px;
@@ -496,14 +726,26 @@ onBeforeUnmount(() => {
 .viewer-hint { padding: 48px; text-align: center; color: #888; font-size: 14px; }
 .viewer-hint-error { color: #c0392b; }
 
-/* ----- 响应式 ----- */
+/* ----- 响应式：窄屏把目录树收进可展开面板 ----- */
 @media (max-width: 640px) {
   .library { margin: 0; border-radius: 0; }
-  .lib-head { padding: 20px; flex-direction: column; align-items: stretch; }
+  .lib-head { padding: 20px; flex-direction: column; align-items: stretch; border-radius: 0; }
   .lib-head-actions { flex-direction: column; align-items: stretch; }
   .search { width: 100%; }
-  .cats { padding: 14px 20px 0; }
+  .btn-tree { display: block; }
+  .lib-body { flex-direction: column; }
+  .tree {
+    display: none;
+    flex: none;
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid #eef1f5;
+    background: #fafbfd;
+  }
+  .tree.open { display: block; }
+  .tree-inner { position: static; max-height: none; overflow: visible; padding: 12px 0 14px; }
   .group { padding: 14px 20px 0; }
+  .list-bar { padding: 14px 20px 0; }
   .doc { padding: 11px 8px; gap: 10px; }
   .doc-action { display: none; }
   .viewer { padding: 0; }
