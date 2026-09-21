@@ -90,12 +90,20 @@
         <div class="viewer-bar">
           <span class="viewer-name" :title="current.title">{{ current.title }}</span>
           <span class="viewer-tools">
-            <a :href="urlOf(current)" target="_blank" rel="noopener">新标签打开</a>
+            <a :href="urlOf(current)" target="_blank" rel="noopener">
+              {{ current.textual ? '查看原文' : '新标签打开' }}
+            </a>
             <a :href="urlOf(current)" download>下载</a>
             <button type="button" @click="close">关闭</button>
           </span>
         </div>
-        <iframe v-if="current.previewable" class="viewer-frame" :src="frameSrc(current)" :title="current.title"></iframe>
+        <div v-if="current.textual" class="viewer-doc">
+          <div v-if="docLoading" class="viewer-hint">正在渲染…</div>
+          <div v-else-if="docError" class="viewer-hint viewer-hint-error">{{ docError }}</div>
+          <!-- eslint-disable-next-line vue/no-v-html -->
+          <article v-else class="md-body" v-html="docHtml"></article>
+        </div>
+        <iframe v-else-if="current.previewable" class="viewer-frame" :src="frameSrc(current)" :title="current.title"></iframe>
         <div v-else class="viewer-fallback">
           <p>{{ current.ext.toUpperCase() }} 格式无法在浏览器里直接预览。</p>
           <p><a :href="urlOf(current)" download>点击下载后查看</a></p>
@@ -118,6 +126,10 @@ const error = ref('')
 const keyword = ref('')
 const activeCat = ref('__all__')
 const current = ref(null)
+/* 文本类文档（Markdown）的渲染结果 */
+const docHtml = ref('')
+const docLoading = ref(false)
+const docError = ref('')
 
 /* iOS / iPadOS 的 Safari 无法在内嵌 iframe 里渲染 PDF，改为直接新标签打开 */
 function isIOS() {
@@ -189,6 +201,11 @@ function frameSrc(doc) {
 }
 
 function open(doc) {
+  // Markdown 等文本类文档由前端自行渲染，任何设备都不需要跳转
+  if (doc.textual) {
+    current.value = doc
+    return
+  }
   if (!doc.previewable) {
     window.open(urlOf(doc), '_blank', 'noopener')
     return
@@ -208,12 +225,31 @@ function onKeydown(e) {
   if (e.key === 'Escape') close()
 }
 
-watch(current, (val) => {
-  document.body.style.overflow = val ? 'hidden' : ''
+watch(current, async (doc) => {
+  document.body.style.overflow = doc ? 'hidden' : ''
+  docHtml.value = ''
+  docError.value = ''
+  if (!doc || !doc.textual) return
+
+  docLoading.value = true
+  try {
+    const res = await fetch(urlOf(doc))
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    const source = await res.text()
+    // 按需加载解析库，只有打开 Markdown 文档时才会下载
+    const { marked } = await import('marked')
+    const html = marked.parse(source, { gfm: true, breaks: false })
+    if (current.value === doc) docHtml.value = html
+  } catch (err) {
+    if (current.value === doc) docError.value = `渲染失败：${err.message}`
+  } finally {
+    docLoading.value = false
+  }
 })
 
 const ICONS = {
   pdf: '📄',
+  md: '📝', markdown: '📝',
   doc: '📝', docx: '📝',
   xls: '📊', xlsx: '📊', csv: '📊',
   ppt: '📽️', pptx: '📽️',
@@ -455,6 +491,11 @@ onBeforeUnmount(() => {
 .viewer-fallback { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; color: #666; font-size: 14px; }
 .viewer-fallback a { color: #0f3460; }
 
+/* ----- 文档正文容器（Markdown 排版样式见文件末尾的非 scoped 样式块）----- */
+.viewer-doc { flex: 1; overflow: auto; background: #fff; }
+.viewer-hint { padding: 48px; text-align: center; color: #888; font-size: 14px; }
+.viewer-hint-error { color: #c0392b; }
+
 /* ----- 响应式 ----- */
 @media (max-width: 640px) {
   .library { margin: 0; border-radius: 0; }
@@ -467,5 +508,100 @@ onBeforeUnmount(() => {
   .doc-action { display: none; }
   .viewer { padding: 0; }
   .viewer-box { border-radius: 0; max-height: none; }
+  .viewer-tools { gap: 10px; }
+}
+</style>
+
+<!--
+  Markdown 正文排版：必须放在非 scoped 的样式块里。
+  v-html 注入的节点不会带上 scoped 的 data-v 属性，写在 scoped 样式块里会完全不生效。
+  所有规则都以 .md-body 开头，因此不会外泄到页面其他部分。
+-->
+<style>
+.md-body {
+  max-width: 820px;
+  margin: 0 auto;
+  padding: 32px 44px 64px;
+  font-size: 15px;
+  line-height: 1.75;
+  color: #333;
+  word-wrap: break-word;
+}
+.md-body > *:first-child { margin-top: 0; }
+.md-body h1 {
+  font-size: 24px;
+  color: #1a1a2e;
+  line-height: 1.35;
+  margin: 0 0 18px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid #0f3460;
+}
+.md-body h2 {
+  font-size: 19px;
+  color: #0f3460;
+  margin: 32px 0 12px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #e6ebf2;
+}
+.md-body h3 { font-size: 16.5px; color: #1a1a2e; margin: 24px 0 8px; }
+.md-body h4 { font-size: 15px; color: #1a1a2e; margin: 20px 0 6px; }
+.md-body p { margin: 10px 0; }
+.md-body ul, .md-body ol { margin: 10px 0; padding-left: 26px; }
+.md-body li { margin: 4px 0; }
+.md-body li::marker { color: #0f3460; }
+.md-body a { color: #0f3460; text-decoration: underline; text-underline-offset: 2px; }
+.md-body strong { color: #1a1a2e; }
+.md-body hr { border: none; border-top: 1px solid #e6ebf2; margin: 26px 0; }
+
+.md-body blockquote {
+  margin: 14px 0;
+  padding: 8px 16px;
+  border-left: 3px solid #b7cbe3;
+  background: #f6f9fd;
+  color: #4a5b70;
+}
+.md-body blockquote > *:first-child { margin-top: 0; }
+.md-body blockquote > *:last-child { margin-bottom: 0; }
+
+.md-body code {
+  background: #eef1f5;
+  color: #b3306b;
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-size: 13px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+.md-body pre {
+  background: #1a1a2e;
+  color: #e6edf3;
+  padding: 14px 16px;
+  border-radius: 6px;
+  overflow-x: auto;
+  margin: 14px 0;
+  line-height: 1.6;
+}
+.md-body pre code { background: none; color: inherit; padding: 0; font-size: 13px; }
+
+.md-body table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 16px 0;
+  font-size: 13.5px;
+}
+.md-body th, .md-body td {
+  border: 1px solid #e2e8f0;
+  padding: 7px 10px;
+  text-align: left;
+  vertical-align: top;
+}
+.md-body th { background: #f2f6fb; color: #0f3460; font-weight: 600; }
+.md-body tbody tr:nth-child(even) { background: #fafbfd; }
+
+@media (max-width: 640px) {
+  .md-body { padding: 20px 18px 48px; font-size: 14.5px; }
+  .md-body h1 { font-size: 20px; }
+  .md-body h2 { font-size: 17px; margin-top: 26px; }
+  /* 宽表格改为可横向滚动，避免撑破布局 */
+  .md-body table { display: block; overflow-x: auto; }
 }
 </style>

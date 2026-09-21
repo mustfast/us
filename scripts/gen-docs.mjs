@@ -18,8 +18,10 @@ const FILES_DIR = join(ROOT, 'public', 'files')
 const OUT_FILE = join(ROOT, 'public', 'docs.json')
 const META_FILE = join(ROOT, 'docs.meta.json')
 
-/** 可以在浏览器里直接内嵌预览的格式 */
-const PREVIEWABLE = new Set(['pdf', 'png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'])
+/** 可以在浏览器里直接渲染预览的格式 */
+const PREVIEWABLE = new Set(['pdf', 'png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'md', 'markdown'])
+/** 以文中排版方式渲染（而非内嵌文件）的格式 */
+const TEXTUAL = new Set(['md', 'markdown'])
 /** 收录进清单的格式，其余文件会被忽略 */
 const ALLOWED = new Set([
   ...PREVIEWABLE,
@@ -83,6 +85,7 @@ for (const { full, rel } of walk(FILES_DIR)) {
     folder,
     ext,
     previewable: PREVIEWABLE.has(ext),
+    textual: TEXTUAL.has(ext),
     size: stat.size,
     mtime: stat.mtime.toISOString(),
     desc: override.desc || ''
